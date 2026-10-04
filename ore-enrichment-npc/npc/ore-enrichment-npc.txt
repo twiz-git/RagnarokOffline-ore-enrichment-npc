@@ -1,0 +1,116 @@
+prt_in,52,62,7	script	Rugged Blacksmith	826,{
+	.@mod$ = "ore-enrichment-npc";
+	.@npc_name$ = "Rugged Blacksmith";
+	.@excMulti = callfunc("F_ModSetting", .@mod$, "excMulti", 0);
+	.@rate_Ori = callfunc("F_ModSetting", .@mod$, "rate_Ori", 10);
+	.@rate_Elu = callfunc("F_ModSetting", .@mod$, "rate_Elu", 10);
+	.@id_Ori = 984;
+	.@id_Ori_Enr = 7620;
+	.@id_Elu = 985;
+	.@id_Elu_Enr = 7619;
+
+	if (checkweight(1201,1) == 0) {
+		mes "["+ .@npc_name$ +"]";
+		mes "Hold on a minute!";
+		mes "This stuff is pretty heavy, and it looks like you're already carrying too much.";
+		mes "Please try again after you make some room.";
+		close;
+	}
+
+	mes "["+ .@npc_name$ +"]";
+	mes "I can Enrich your Oridecon or Elunium to make them more potent for upgrades.";
+	mes "To Enrich each type I will need:";
+	mes ""+ .@rate_Ori +" refined Oridecon.";
+	mes ""+ .@rate_Elu +" refined Elunium.";
+	next;
+
+	.@choice = select("Make Enriched Oridecon:Make Enriched Elunium");
+	if (.@choice == 1) {
+		.@item_req = .@id_Ori;
+		.@item_enr = .@id_Ori_Enr;
+		.@item_amt = .@rate_Ori;
+	} else {
+		.@item_req = .@id_Elu;
+		.@item_enr = .@id_Elu_Enr;
+		.@item_amt = .@rate_Elu;
+	}
+
+	if (countitem(.@item_req) < .@item_amt) {
+		mes "["+ .@npc_name$ +"]";
+		mes "Looks like you don't have enough.";
+		mes "I need "+ .@item_amt +" "+ getitemname(.@item_req) +" to make an Enriched "+ getitemname(.@item_req) +".";
+		close;
+	}
+
+	if (.@excMulti == 1) {
+		callfunc "F_OreEnrich", .@item_req, .@item_amt, .@item_enr, .@npc_name$;
+	} else {
+		delitem .@item_req, .@item_amt;
+		getitem .@item_enr, 1;
+		mes "["+ .@npc_name$ +"]";
+		mes "Here's your Enriched "+ getitemname(.@item_req) +".";
+		close;
+	}
+}
+
+function	script	F_OreEnrich	{
+	.@item_req = getarg(0);
+	.@item_amt = getarg(1);
+	.@item_enr = getarg(2);
+	.@npc_name$ = getarg(3);
+
+	mes "["+ .@npc_name$ +"]";
+	mes "Okay, let me check how many "+ getitemname(.@item_req) +" you have on you.";
+	mes "Hmm...";
+	next;
+	mes "["+ .@npc_name$ +"]";
+	mes "You have a total of "+ countitem(.@item_req) +" "+ getitemname(.@item_req) +".";
+	mes "I can make up to "+ (countitem(.@item_req)/.@item_amt) +" Enriched "+ getitemname(.@item_req) +".";
+	next;
+	mes "["+ .@npc_name$ +"]";
+	mes "What do you say, do we have a deal?";
+	next;
+	
+	if (select("Deal.:No deal.") == 2) {
+		mes "["+ .@npc_name$ +"]";
+		mes "Come back later if you change your mind.";
+		close;
+	}
+
+	mes "["+ .@npc_name$ +"]";
+	mes "Now, I can trade you between 1 and 100 Enriched "+ getitemname(.@item_req) +" at a time.";
+	mes "If you change your mind, just enter '0' to cancel.";
+	next;
+
+	while(1) {
+		input .@input,0,101;
+		if (.@input == 0) {
+			mes "["+ .@npc_name$ +"]";
+			mes "Come back later if you change your mind.";
+			close;
+		}
+		if (.@input > 100) {
+			mes "["+ .@npc_name$ +"]";
+			mes "I can't give you more than 100 Enriched "+ getitemname(.@item_req) +" at a time.";
+			mes "Let's try this again.";
+			next;
+		}
+		break;
+	}
+
+	.@put_out_item = .@input * .@item_amt;
+	if (countitem(.@item_req) < .@put_out_item) {
+		mes "["+ .@npc_name$ +"]";
+		mes "Uh oh, the number you entered doesn't seem right. You better check the number of "+ getitemname(.@item_req) +" that you have again.";
+		close;
+	}
+
+	mes "["+ .@npc_name$ +"]";
+	mes "There you go!";
+	mes "Check how many Enriched "+ getitemname(.@item_req) +" I've given you, it should be good.";
+	mes "Thanks, that was a good deal~";
+	
+	delitem .@item_req, .@put_out_item;
+	getitem .@item_enr, .@input; // Clean reward output with zero switch-case logic
+	close;
+}
